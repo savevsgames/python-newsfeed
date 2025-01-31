@@ -29,3 +29,10 @@
 - Add error handling.
 - Add sessions to the app.
 - Create the logout and login routes.
+
+
+## Additional API Routes
+- Create APIs to upvote and comment on posts.
+- Create APIs to add, update, and delete posts.
+- Add data to dashboard templates.
+- Protect dashboard and API routes with custom decorators

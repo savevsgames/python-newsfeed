@@ -25,3 +25,10 @@ class User(Base):
         assert(len(password) > 4)
         # salt the pw with bcrypt before saving it to db
         return bcrypt.hashpw(password.encode('utf-8'), salt)
+
+    # middleware method to verify passwords match - bcrypt.checkpw
+    def verify_password(self, password):
+      return bcrypt.checkpw(
+        password.encode('utf-8'),
+        self.password.encode('utf-8')
+      )

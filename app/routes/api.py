@@ -1,7 +1,8 @@
 import traceback
 from flask import Blueprint, request, jsonify, session
-from app.models import User
+from app.models import User, Post, Comment, Vote
 from app.db import get_db
+from app.utils.auth import login_required
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -79,3 +80,123 @@ def login():
       print(traceback.format_exc())
 
       return jsonify(message='Incorrect credentials'), 400
+
+@bp.route('/comments', methods=['POST'])
+@login_required
+def comment():
+  data = request.get_json()
+  db = get_db()
+
+  try:
+      # create a new comment
+      newComment = Comment(
+          comment_text=data['comment_text'],
+          post_id=data['post_id'],
+          user_id=session.get('user_id')
+      )
+
+      db.add(newComment)
+      db.commit()
+
+      return jsonify(id=newComment.id)
+
+  except Exception as e:
+      # the query has failed to INSERT new comment
+      print(traceback.format_exc())
+
+      db.rollback()
+      return jsonify(message='Comment failed'), 500
+
+
+# upvote endpoint creates new record in votes table
+@bp.route('/posts/upvote', methods=['PUT'])
+@login_required
+def upvote():
+  data = request.get_json()
+  db = get_db()
+
+  try:
+    # create a new vote with incoming post id and user/session id
+    newVote = Vote(
+      post_id = data['post_id'],
+      user_id = session.get('user_id')
+    )
+
+    db.add(newVote)
+    db.commit()
+  except Exception as e:
+    # the query has failed to INSERT new upvote
+    print(traceback.format_exc())
+
+    db.rollback()
+    return jsonify(message = 'Upvote failed'), 500
+
+  return '', 204
+
+
+# create a post
+@bp.route('/posts', methods=['POST'])
+@login_required
+def create():
+  data = request.get_json()
+  db = get_db()
+
+  try:
+    # create a new post
+    newPost = Post(
+      title = data['title'],
+      post_url = data['post_url'],
+      user_id = session.get('user_id')
+    )
+
+    db.add(newPost)
+    db.commit()
+  except Exception as e:
+    # the query has failed to INSERT new post
+    print(traceback.format_exc())
+
+    db.rollback()
+    return jsonify(message = 'Post failed'), 500
+
+  return jsonify(id = newPost.id)
+
+
+# update posts
+@bp.route('/posts/<id>', methods=['PUT'])
+@login_required
+def update(id):
+  data = request.get_json()
+  db = get_db()
+
+  try:
+    # retrieve post and update title property
+    post = db.query(Post).filter(Post.id == id).one()
+    post.title = data['title']
+    db.commit()
+  except Exception as e:
+    # the query has failed to UPDATE post
+    print(traceback.format_exc())
+
+    db.rollback()
+    return jsonify(message = 'Post not found'), 404
+
+  return '', 204
+
+# delete posts
+@bp.route('/posts/<id>', methods=['DELETE'])
+@login_required
+def delete(id):
+  db = get_db()
+
+  try:
+    # delete post from db
+    db.delete(db.query(Post).filter(Post.id == id).one())
+    db.commit()
+  except Exception as e:
+    # the query has failed to DELETE post
+    print(traceback.format_exc())
+
+    db.rollback()
+    return jsonify(message = 'Post not found'), 404
+
+  return '', 204

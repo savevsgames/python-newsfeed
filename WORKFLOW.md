@@ -36,3 +36,8 @@
 - Create APIs to add, update, and delete posts.
 - Add data to dashboard templates.
 - Protect dashboard and API routes with custom decorators
+
+
+## Deploy the Application
+- Prepare the local files for deployment.
+- Set up the Heroku app.
